@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: monitoring
+data:
+  GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana/"
+  GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus.monitoring.svc.cluster.local:9090/prometheus
+      isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-flask-dashboard-provider
+  namespace: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'flask'
+      orgId: 1
+      folder: 'Flask'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      options:
+        path: /var/lib/grafana/dashboards/flask
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-flask-dashboard
+  namespace: monitoring
+data:
+  flask-http-basic.json: |
+    {
+      "uid": "flask-http-basic",
+      "title": "Flask App - Basic HTTP Metrics (5m window)",
+      "schemaVersion": 36,
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Requests per Second (5m avg)",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total[5m])",
+              "legendFormat": "{{method}} {{status}}"
+            }
+          ],
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 }
+        },
+        {
+          "type": "stat",
+          "title": "Service Health (up)",
+          "targets": [
+            {
+              "expr": "up",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "gridPos": { "x": 0, "y": 8, "w": 24, "h": 6 }
+        }
+      ]
+    }
